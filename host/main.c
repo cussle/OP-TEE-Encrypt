@@ -115,18 +115,36 @@ int main(void)
     op.params[2].tmpref.buffer = encrypted_key;
     op.params[2].tmpref.size = file_size;
 
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_NONE,
-					 TEEC_NONE, TEEC_NONE);
-	op.params[0].value.a = 42;
+	// 암호화 명령 실행
+	printf("======================== Encryption ========================\n");
+    res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_ENC_VALUE, &op, &err_origin);
+    if (res != TEEC_SUCCESS)
+        errx(1, "TEEC_InvokeCommand 실패, 코드: 0x%x, 원인: 0x%x", res, err_origin);
 
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_ENC_VALUE, &op,
-				 &err_origin);
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_DEC_VALUE, &op,
-				 &err_origin);
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_GET, &op,
-				 &err_origin);
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_ENC, &op,
-				 &err_origin);
+    // 암호문 파일 쓰기
+    fout = fopen(CIPHERTEXT_FILE, "w");
+    if (!fout) {
+        perror("암호문 파일 쓰기 오류");
+    } else {
+        fputs(ciphertext, fout);
+        fclose(fout);
+    }
+
+    // 암호화된 키 파일 쓰기
+    fout = fopen(ENCRYPTED_KEY_FILE, "w");
+    if (!fout) {
+        perror("암호화된 키 파일 쓰기 오류");
+    } else {
+        fputs(encrypted_key, fout);
+        fclose(fout);
+    }
+
+	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_DEC_VALUE, &op,
+	// 			 &err_origin);
+	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_GET, &op,
+	// 			 &err_origin);
+	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_ENC, &op,
+	// 			 &err_origin);
 
 	TEEC_CloseSession(&sess);
 
