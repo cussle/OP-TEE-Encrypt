@@ -57,7 +57,10 @@ int main(void)
         return 1;
     }
 
+	// TEE 컨텍스트 초기화
 	res = TEEC_InitializeContext(NULL, &ctx);
+    if (res != TEEC_SUCCESS)
+        errx(1, "TEEC_InitializeContext 실패, 코드: 0x%x", res);
 
 	res = TEEC_OpenSession(&ctx, &sess, &uuid,
 			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
