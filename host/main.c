@@ -35,6 +35,10 @@
 /* To the the UUID (found the the TA's h-file(s)) */
 #include <TEEencrypt_ta.h>
 
+// 텍스트 파일 이름 정의
+#define CIPHERTEXT_FILE "ciphertext.txt" 		// 암호문 출력 파일
+#define ENCRYPTED_KEY_FILE "encryptedkey.txt" 	// 암호화된 키 파일
+
 int main(void)
 {
 	TEEC_Result res;
@@ -43,6 +47,15 @@ int main(void)
 	TEEC_Operation op;
 	TEEC_UUID uuid = TA_TEEencrypt_UUID;
 	uint32_t err_origin;
+    FILE *fin, *fout;		// 파일 입출력 포인터
+    char *plaintext;		// 동적 할당 평문 버퍼
+    size_t file_size;		// 입력된 평문 파일의 총 바이트
+
+    // 커맨드 인자 확인
+    if (argc != 3 || strcmp(argv[1], "-e") != 0) {
+        printf("사용법: %s -e [평문 파일 이름]\n", argv[0]);
+        return 1;
+    }
 
 	res = TEEC_InitializeContext(NULL, &ctx);
 
