@@ -67,6 +67,33 @@ int main(void)
     if (res != TEEC_SUCCESS)
         errx(1, "TEEC_OpenSession 실패, 코드: 0x%x, 원인: 0x%x", res, err_origin);
 
+	// 평문 파일 읽기
+    fin = fopen(argv[2], "r");
+    if (!fin) {
+        perror("파일 열기 오류");
+        TEEC_CloseSession(&sess);
+        TEEC_FinalizeContext(&ctx);
+        return 1;
+    }
+
+    // 파일 크기 확인 및 메모리 할당
+    fseek(fin, 0, SEEK_END);
+    file_size = ftell(fin);
+    rewind(fin);
+
+    plaintext = malloc(file_size + 1);
+    if (!plaintext) {
+        perror("메모리 할당 오류");
+        fclose(fin);
+        TEEC_CloseSession(&sess);
+        TEEC_FinalizeContext(&ctx);
+        return 1;
+    }
+
+	fread(plaintext, 1, file_size, fin);
+    plaintext[file_size] = '\0';
+    fclose(fin);
+
 	memset(&op, 0, sizeof(op));
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_NONE,
