@@ -94,7 +94,26 @@ int main(void)
     plaintext[file_size] = '\0';
     fclose(fin);
 
-	memset(&op, 0, sizeof(op));
+	// 암호화 작업 설정
+    char *ciphertext = malloc(file_size + 1);
+    char *encrypted_key = malloc(file_size + 1);
+
+    if (!ciphertext || !encrypted_key) {
+        perror("메모리 할당 오류");
+        free(plaintext);
+        TEEC_CloseSession(&sess);
+        TEEC_FinalizeContext(&ctx);
+        return 1;
+    }
+
+    memset(&op, 0, sizeof(op));
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_MEMREF_TEMP_OUTPUT, TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE);
+    op.params[0].tmpref.buffer = plaintext;
+    op.params[0].tmpref.size = file_size;
+    op.params[1].tmpref.buffer = ciphertext;
+    op.params[1].tmpref.size = file_size;
+    op.params[2].tmpref.buffer = encrypted_key;
+    op.params[2].tmpref.size = file_size;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
