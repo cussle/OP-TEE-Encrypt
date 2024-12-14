@@ -62,8 +62,10 @@ int main(void)
     if (res != TEEC_SUCCESS)
         errx(1, "TEEC_InitializeContext 실패, 코드: 0x%x", res);
 
-	res = TEEC_OpenSession(&ctx, &sess, &uuid,
-			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+    // TA와 세션 열기
+	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+    if (res != TEEC_SUCCESS)
+        errx(1, "TEEC_OpenSession 실패, 코드: 0x%x, 원인: 0x%x", res, err_origin);
 
 	memset(&op, 0, sizeof(op));
 
