@@ -146,9 +146,12 @@ int main(void)
 	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_ENC, &op,
 	// 			 &err_origin);
 
-	TEEC_CloseSession(&sess);
-
-	TEEC_FinalizeContext(&ctx);
-
+    // 메모리 해제 및 TEE 컨텍스트 종료
+    free(plaintext);
+    free(ciphertext);
+    free(encrypted_key);
+    TEEC_CloseSession(&sess);
+    TEEC_FinalizeContext(&ctx);
+	
 	return 0;
 }
