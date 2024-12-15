@@ -87,15 +87,18 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx) {
 
 /*
  * 시저 암호를 사용하여 평문을 암호화하는 함수
+ * - param0: 평문 (입력, memref)
+ * - param1: 암호문 (출력, memref)
+ * - param2: 암호화된 키 (출력, value)
  */
 static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
     /* 파라미터 타입 정의 */
-	uint32_t exp_param_types = TEE_PARAM_TYPES(
-		TEE_PARAM_TYPE_VALUE_INOUT,
-		TEE_PARAM_TYPE_NONE,
-		TEE_PARAM_TYPE_NONE,
-		TEE_PARAM_TYPE_NONE
-	);
+    uint32_t exp_param_types = TEE_PARAM_TYPES(
+        TEE_PARAM_TYPE_MEMREF_INPUT,
+        TEE_PARAM_TYPE_MEMREF_OUTPUT,
+        TEE_PARAM_TYPE_VALUE_OUTPUT,
+        TEE_PARAM_TYPE_NONE
+    );
 
 	DMSG("has been called");
 
@@ -103,11 +106,52 @@ static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	IMSG("Got value: %u from NW", params[0].value.a);
-	params[0].value.a++;
-	IMSG("Increase value to: %u", params[0].value.a);
+    /* 입력 평문과 출력 암호문 버퍼*/
+    char *plaintext = (char *)params[0].memref.buffer;
+    size_t plaintext_size = params[0].memref.size;
 
-	return TEE_SUCCESS;
+    char *ciphertext = (char *)params[1].memref.buffer;
+    size_t ciphertext_size = params[1].memref.size;
+
+    /* 암호화된 키를 저장할 변수 */
+    uint32_t encrypted_key;
+
+    /* 랜덤 키 생성 */
+    uint32_t rand_bytes;
+    TEE_Result res = TEE_GenerateRandom(&rand_bytes, sizeof(rand_bytes));
+    if (res != TEE_SUCCESS)
+        return res;
+    uint32_t rand_key = (rand_bytes % 25) + 1;  // 1~25 범위로 조정
+
+    /* 시저 암호로 평문을 암호화 */
+    for (size_t i = 0; i < plaintext_size; i++) {
+        char c = plaintext[i];
+        if ('a' <= c && c <= 'z') {
+            ciphertext[i] = ((c - 'a') + rand_key) % 26 + 'a';
+        }
+        else if ('A' <= c && c <= 'Z') {
+            ciphertext[i] = ((c - 'A') + rand_key) % 26 + 'A';
+        }
+        else {
+            /* 알파벳이 아닌 문자 */
+            ciphertext[i] = c;
+        }
+    }
+
+    /* 암호화된 키 계산 - (랜덤 키 + 루트 키) % 26 */
+    encrypted_key = (rand_key + ROOT_KEY) % 26;
+
+    /* 암호문 버퍼 크기 확인 */
+    if (ciphertext_size < plaintext_size) {
+        return TEE_ERROR_SHORT_BUFFER;
+    }
+
+    /* 암호화된 키를 param2에 저장 */
+    params[2].value.a = encrypted_key;
+
+    IMSG("암호화 완료: 랜덤 키 = %u, 암호화된 키 = %u", rand_key, encrypted_key);
+
+    return TEE_SUCCESS;
 }
 
 static TEE_Result dec_value(uint32_t param_types, TEE_Param params[4]) {
