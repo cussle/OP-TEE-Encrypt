@@ -27,7 +27,6 @@
 
 #include <tee_internal_api.h>
 #include <tee_internal_api_extensions.h>
-
 #include <TEEencrypt_ta.h>
 #include <string.h>
 
@@ -154,27 +153,6 @@ static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
     return TEE_SUCCESS;
 }
 
-static TEE_Result dec_value(uint32_t param_types, TEE_Param params[4]) {
-    /* 파라미터 타입 정의 */
-	uint32_t exp_param_types = TEE_PARAM_TYPES(
-		TEE_PARAM_TYPE_VALUE_INOUT,
-		TEE_PARAM_TYPE_NONE,
-		TEE_PARAM_TYPE_NONE,
-		TEE_PARAM_TYPE_NONE
-	);
-
-	DMSG("has been called");
-
-    /* 파라미터 타입 검증 */
-	if (param_types != exp_param_types)
-		return TEE_ERROR_BAD_PARAMETERS;
-
-	IMSG("Got value: %u from NW", params[0].value.a);
-	params[0].value.a--;
-	IMSG("Decrease value to: %u", params[0].value.a);
-
-	return TEE_SUCCESS;
-}
 /*
  * TA가 호출될 때 실행되며, cmd_id에 따라 적절한 함수를 호출
  */
