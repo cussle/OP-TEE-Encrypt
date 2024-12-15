@@ -31,40 +31,38 @@
 #include <TEEencrypt_ta.h>
 #include <string.h>
 
-/*
- * Called when the instance of the TA is created. This is the first call in
- * the TA.
- */
-TEE_Result TA_CreateEntryPoint(void)
-{
-	DMSG("has been called");
+/* TA의 루트 키 설정 */
+#define ROOT_KEY 3
 
+/*
+ * TA가 생성될 때 호출되는 함수
+ */
+TEE_Result TA_CreateEntryPoint(void) {
+	DMSG("has been called");
 	return TEE_SUCCESS;
 }
 
 /*
- * Called when the instance of the TA is destroyed if the TA has not
- * crashed or panicked. This is the last call in the TA.
+ * TA가 파괴될 때 호출되는 함수
  */
-void TA_DestroyEntryPoint(void)
-{
+void TA_DestroyEntryPoint(void) {
 	DMSG("has been called");
 }
 
 /*
- * Called when a new session is opened to the TA. *sess_ctx can be updated
- * with a value to be able to identify this session in subsequent calls to the
- * TA. In this function you will normally do the global initialization for the
- * TA.
+ * 새로운 세션이 열릴 때 호출되는 함수
  */
-TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
-		TEE_Param __maybe_unused params[4],
-		void __maybe_unused **sess_ctx)
-{
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
+TEE_Result TA_OpenSessionEntryPoint(
+	uint32_t param_types,
+	TEE_Param __maybe_unused params[4],
+	void __maybe_unused **sess_ctx
+) {
+	uint32_t exp_param_types = TEE_PARAM_TYPES(
+		TEE_PARAM_TYPE_NONE,
+		TEE_PARAM_TYPE_NONE,
+		TEE_PARAM_TYPE_NONE,
+		TEE_PARAM_TYPE_NONE
+	);
 
 	DMSG("has been called");
 
@@ -76,28 +74,28 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 	(void)&params;
 	(void)&sess_ctx;
 
-	/* If return value != TEE_SUCCESS the session will not be created. */
 	return TEE_SUCCESS;
 }
 
 /*
- * Called when a session is closed, sess_ctx hold the value that was
- * assigned by TA_OpenSessionEntryPoint().
+ * 세션이 닫힐 때 호출되는 함수
  */
-void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
-{
+void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx) {
 	(void)&sess_ctx; /* Unused parameter */
 	IMSG("Goodbye!\n");
 }
 
-static TEE_Result enc_value(uint32_t param_types,
-	TEE_Param params[4])
-{
+/*
+ * 시저 암호를 사용하여 평문을 암호화하는 함수
+ */
+static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
     /* 파라미터 타입 정의 */
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
+	uint32_t exp_param_types = TEE_PARAM_TYPES(
+		TEE_PARAM_TYPE_VALUE_INOUT,
+		TEE_PARAM_TYPE_NONE,
+		TEE_PARAM_TYPE_NONE,
+		TEE_PARAM_TYPE_NONE
+	);
 
 	DMSG("has been called");
 
@@ -112,14 +110,14 @@ static TEE_Result enc_value(uint32_t param_types,
 	return TEE_SUCCESS;
 }
 
-static TEE_Result dec_value(uint32_t param_types,
-	TEE_Param params[4])
-{
+static TEE_Result dec_value(uint32_t param_types, TEE_Param params[4]) {
     /* 파라미터 타입 정의 */
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
+	uint32_t exp_param_types = TEE_PARAM_TYPES(
+		TEE_PARAM_TYPE_VALUE_INOUT,
+		TEE_PARAM_TYPE_NONE,
+		TEE_PARAM_TYPE_NONE,
+		TEE_PARAM_TYPE_NONE
+	);
 
 	DMSG("has been called");
 
@@ -134,14 +132,13 @@ static TEE_Result dec_value(uint32_t param_types,
 	return TEE_SUCCESS;
 }
 /*
- * Called when a TA is invoked. sess_ctx hold that value that was
- * assigned by TA_OpenSessionEntryPoint(). The rest of the paramters
- * comes from normal world.
+ * TA가 호출될 때 실행되며, cmd_id에 따라 적절한 함수를 호출
  */
-TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
-			uint32_t cmd_id,
-			uint32_t param_types, TEE_Param params[4])
-{
+TEE_Result TA_InvokeCommandEntryPoint(
+	void __maybe_unused *sess_ctx,
+	uint32_t cmd_id,
+	uint32_t param_types, TEE_Param params[4]
+) {
 	(void)&sess_ctx; /* Unused parameter */
 
 	switch (cmd_id) {
