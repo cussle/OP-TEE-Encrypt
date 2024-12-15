@@ -37,24 +37,35 @@
 
 int main(void)
 {
-	TEEC_Result res;
-	TEEC_Context ctx;
-	TEEC_Session sess;
-	TEEC_Operation op;
-	TEEC_UUID uuid = TA_TEEencrypt_UUID;
-	uint32_t err_origin;
+	TEEC_Result res;						// OP-TEE 함수 호출 결과
+	TEEC_Context ctx;						// OP-TEE 컨텍스트
+	TEEC_Session sess;						// OP-TEE 세션
+	TEEC_Operation op;						// OP-TEE 연산 구조체
+	TEEC_UUID uuid = TA_TEEencrypt_UUID;	// TA의 UUID 설정
+	uint32_t err_origin;					// 오류 원인
 
+    /* OP-TEE 컨텍스트 초기화 */
 	res = TEEC_InitializeContext(NULL, &ctx);
+    if (res != TEEC_SUCCESS) {
+        errx(1, "TEEC_InitializeContext 실패: 0x%x", res);
+    }
 
-	res = TEEC_OpenSession(&ctx, &sess, &uuid,
-			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+    /* TA와 세션 열기 */
+	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+    if (res != TEEC_SUCCESS) {
+        TEEC_FinalizeContext(&ctx);
+        errx(1, "TEEC_OpenSession 실패: 0x%x, 원인: 0x%x", res, err_origin);
+    }
 
+    /* TEEC_Operation 구조체 초기화 */
 	memset(&op, 0, sizeof(op));
 
+	/* 파라미터 타입 설정 */
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 	op.params[0].value.a = 42;
 
+    /* TA 명령어 호출 */
 	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_ENC_VALUE, &op,
 				 &err_origin);
 	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_DEC_VALUE, &op,
@@ -64,8 +75,8 @@ int main(void)
 	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_ENC, &op,
 				 &err_origin);
 
+    /* 세션 및 컨텍스트 종료 */
 	TEEC_CloseSession(&sess);
-
 	TEEC_FinalizeContext(&ctx);
 
 	return 0;
