@@ -29,6 +29,7 @@
 #include <tee_internal_api_extensions.h>
 
 #include <TEEencrypt_ta.h>
+#include <string.h>
 
 /*
  * Called when the instance of the TA is created. This is the first call in
@@ -67,18 +68,13 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 
 	DMSG("has been called");
 
+    /* 파라미터 타입 검증 */
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 
 	/* Unused parameters */
 	(void)&params;
 	(void)&sess_ctx;
-
-	/*
-	 * The DMSG() macro is non-standard, TEE Internal API doesn't
-	 * specify any means to logging from a TA.
-	 */
-	IMSG("Hello World!\n");
 
 	/* If return value != TEE_SUCCESS the session will not be created. */
 	return TEE_SUCCESS;
@@ -97,6 +93,7 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 static TEE_Result enc_value(uint32_t param_types,
 	TEE_Param params[4])
 {
+    /* 파라미터 타입 정의 */
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE,
@@ -104,6 +101,7 @@ static TEE_Result enc_value(uint32_t param_types,
 
 	DMSG("has been called");
 
+    /* 파라미터 타입 검증 */
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 
@@ -117,6 +115,7 @@ static TEE_Result enc_value(uint32_t param_types,
 static TEE_Result dec_value(uint32_t param_types,
 	TEE_Param params[4])
 {
+    /* 파라미터 타입 정의 */
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE,
@@ -124,6 +123,7 @@ static TEE_Result dec_value(uint32_t param_types,
 
 	DMSG("has been called");
 
+    /* 파라미터 타입 검증 */
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 
@@ -145,14 +145,14 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 	(void)&sess_ctx; /* Unused parameter */
 
 	switch (cmd_id) {
-	case TA_TEEencrypt_CMD_ENC_VALUE:
+	case TA_TEEencrypt_CMD_ENC_VALUE:  // 암호화 명령어 처리
 		return enc_value(param_types, params);
-	case TA_TEEencrypt_CMD_DEC_VALUE:
-		return dec_value(param_types, params);
-	case TA_TEEencrypt_CMD_RANDOMEKEY_GET:
-		return dec_value(param_types, params);
-	case TA_TEEencrypt_CMD_RANDOMEKEY_ENC:
-		return dec_value(param_types, params);
+	// case TA_TEEencrypt_CMD_DEC_VALUE:
+	// 	return dec_value(param_types, params);
+	// case TA_TEEencrypt_CMD_RANDOMEKEY_GET:
+	// 	return dec_value(param_types, params);
+	// case TA_TEEencrypt_CMD_RANDOMEKEY_ENC:
+	// 	return dec_value(param_types, params);
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
