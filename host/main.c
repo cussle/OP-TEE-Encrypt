@@ -27,6 +27,7 @@
 
 #include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* OP-TEE TEE client API (built by optee_client) */
