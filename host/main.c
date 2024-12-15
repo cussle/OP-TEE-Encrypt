@@ -121,10 +121,18 @@ int main(void)
     /* TEEC_Operation 구조체 초기화 */
 	memset(&op, 0, sizeof(op));
 
-	/* 파라미터 타입 설정 */
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_NONE,
-					 TEEC_NONE, TEEC_NONE);
-	op.params[0].value.a = 42;
+    /* 파라미터 타입 설정:
+       param0: 평문 (입력, memref)
+       param1: 암호문 (출력, memref)
+       param2: 암호화된 키 (출력, value)
+       param3: 사용 안 함
+    */
+    op.paramTypes = TEEC_PARAM_TYPES(
+        TEEC_MEMREF_INPUT,
+        TEEC_MEMREF_OUTPUT,
+        TEEC_VALUE_OUTPUT,
+        TEEC_NONE
+    );
 
     /* TA 명령어 호출 */
 	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_ENC_VALUE, &op,
