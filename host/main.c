@@ -44,6 +44,18 @@ int main(void)
 	TEEC_UUID uuid = TA_TEEencrypt_UUID;	// TA의 UUID 설정
 	uint32_t err_origin;					// 오류 원인
 
+    /* 명령어 및 파일 인자 확인 */
+    if (argc != 3) {
+        fprintf(stderr, "사용법: %s -e [평문 파일]\n", argv[0]);
+        return 1;
+    }
+
+    /* 암호화 명령어 옵션 확인 */
+    if (strcmp(argv[1], "-e") != 0) {
+        fprintf(stderr, "지원되지 않는 명령어입니다. 사용 가능한 옵션: -e\n");
+        return 1;
+    }
+
     /* OP-TEE 컨텍스트 초기화 */
 	res = TEEC_InitializeContext(NULL, &ctx);
     if (res != TEEC_SUCCESS) {
