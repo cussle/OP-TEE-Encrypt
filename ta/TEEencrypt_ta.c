@@ -81,7 +81,6 @@ TEE_Result TA_OpenSessionEntryPoint(
  */
 void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx) {
 	(void)&sess_ctx; /* Unused parameter */
-	IMSG("Goodbye!\n");
 }
 
 /*
