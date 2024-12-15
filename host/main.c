@@ -146,14 +146,19 @@ int main(void)
     /* param3: 사용 안 함 */
 
     /* TA 명령어 호출 */
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_ENC_VALUE, &op,
-				 &err_origin);
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_DEC_VALUE, &op,
-				 &err_origin);
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_GET, &op,
-				 &err_origin);
-	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_ENC, &op,
-				 &err_origin);
+	printf("========================Encryption========================\n");
+    res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_ENC_VALUE, &op, &err_origin);  // 암호화 명령어 호출
+    if (res != TEEC_SUCCESS) {
+        TEEC_CloseSession(&sess);
+        TEEC_FinalizeContext(&ctx);
+        errx(1, "TEEC_InvokeCommand 실패: 0x%x, 원인: 0x%x", res, err_origin);
+    }
+	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_DEC_VALUE, &op,
+	// 			 &err_origin);
+	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_GET, &op,
+	// 			 &err_origin);
+	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_ENC, &op,
+	// 			 &err_origin);
 
     /* 세션 및 컨텍스트 종료 */
 	TEEC_CloseSession(&sess);
