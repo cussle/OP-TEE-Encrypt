@@ -160,9 +160,58 @@ int main(void)
 	// res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RANDOMEKEY_ENC, &op,
 	// 			 &err_origin);
 
+    /* 암호화된 키를 param2의 값으로 반환 */
+    uint32_t encrypted_key = op.params[2].value.a;
+
     /* 세션 및 컨텍스트 종료 */
 	TEEC_CloseSession(&sess);
 	TEEC_FinalizeContext(&ctx);
+
+    /* 암호문을 파일에 저장 */
+    fp = fopen(ciphertext_filename, "wb");  // 쓰기 바이너리 모드로 파일 열기
+    if (!fp) {
+        perror("암호문 파일 생성 실패");
+        free(plaintext);
+        free(ciphertext);
+        return 1;
+    }
+    size_t write_size = fwrite(ciphertext, 1, file_size, fp);
+    if (write_size != file_size) {
+        perror("암호문 파일 쓰기 실패");
+        fclose(fp);
+        free(plaintext);
+        free(ciphertext);
+        return 1;
+    }
+    fclose(fp);  // 파일 닫기
+
+    /* 암호화된 키를 파일에 저장 */
+    char encrypted_key_str[12];  // 키를 문자열로 저장할 공간
+    snprintf(encrypted_key_str, sizeof(encrypted_key_str), "%u", encrypted_key);
+
+	FILE *fp_key = fopen(encryptedkey_filename, "w");  // 암호화된 키 파일 열기 (쓰기 모드)
+    if (!fp_key) {
+        perror("암호화된 키 파일 생성 실패");
+        free(plaintext);
+        free(ciphertext);
+        return 1;
+    }
+    size_t key_write_size = fwrite(encrypted_key_str, 1, strlen(encrypted_key_str), fp_key);
+    if (key_write_size != strlen(encrypted_key_str)) {
+        perror("암호화된 키 파일 쓰기 실패");
+        fclose(fp_key);
+        free(plaintext);
+        free(ciphertext);
+        return 1;
+    }
+    fclose(fp_key);  // 파일 닫기
+
+	/* 암호화 완료 메시지 */
+    printf("암호문 파일: %s\n암호화된 키 파일: %s\n", ciphertext_filename, encryptedkey_filename);
+
+    /* 할당된 메모리 해제 */
+    free(plaintext);
+    free(ciphertext);
 
 	return 0;
 }
