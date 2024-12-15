@@ -151,7 +151,68 @@ static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
 }
 
 /*
- * TA가 호출될 때 실행되며, cmd_id에 따라 적절한 함수를 호출
+ * 시저 암호를 사용하여 암호문을 복호화하는 함수.
+ * - param0: 암호문 (입력, memref)
+ * - param1: 암호화된 키 (입력, value)
+ * - param2: 복호화된 평문 (출력, memref)
+ * - param3: 사용 안 함
+ */
+static TEE_Result dec_value(uint32_t param_types, TEE_Param params[4]) {
+    /* 예상되는 파라미터 타입 정의 */
+    uint32_t exp_param_types = TEE_PARAM_TYPES(
+        TEE_PARAM_TYPE_MEMREF_INPUT,
+        TEE_PARAM_TYPE_VALUE_INPUT,
+        TEE_PARAM_TYPE_MEMREF_OUTPUT,
+        TEE_PARAM_TYPE_NONE
+    );
+
+    /* 파라미터 타입 검증 */
+    if (param_types != exp_param_types)
+        return TEE_ERROR_BAD_PARAMETERS;
+
+    /* 암호문과 암호화된 키 */
+    char *ciphertext = (char *)params[0].memref.buffer;
+    size_t ciphertext_size = params[0].memref.size;
+
+    uint32_t encrypted_key = params[1].value.a;
+
+    char *decrypted_plaintext = (char *)params[2].memref.buffer;
+    size_t decrypted_size = params[2].memref.size;
+
+    /* 암호화된 키로부터 원래의 랜덤 키 복호화 */
+    uint32_t rand_key = (encrypted_key + 26 - ROOT_KEY) % 26;
+    if (rand_key == 0) {
+        rand_key = 26;
+    }
+
+    /* 시저 암호로 암호문을 복호화 */
+    for (size_t i = 0; i < ciphertext_size; i++) {
+        char c = ciphertext[i];
+        if ('a' <= c && c <= 'z') {
+            decrypted_plaintext[i] = ((c - 'a') + (26 - rand_key)) % 26 + 'a';
+        }
+        else if ('A' <= c && c <= 'Z') {
+            decrypted_plaintext[i] = ((c - 'A') + (26 - rand_key)) % 26 + 'A';
+        }
+        else {
+            /* 알파벳이 아닌 문자 */
+            decrypted_plaintext[i] = c;
+        }
+    }
+
+    /* 복호화된 평문 버퍼 크기 확인 */
+    if (decrypted_size < ciphertext_size) {
+        return TEE_ERROR_SHORT_BUFFER;
+    }
+
+    IMSG("복호화 완료: 복호화된 키 = %u", rand_key);
+
+    return TEE_SUCCESS;
+}
+
+/*
+ * TA가 호출될 때 실행되는 엔트리 포인트
+ * - cmd_id에 따라 적절한 함수를 호출
  */
 TEE_Result TA_InvokeCommandEntryPoint(
 	void __maybe_unused *sess_ctx,
@@ -163,8 +224,8 @@ TEE_Result TA_InvokeCommandEntryPoint(
 	switch (cmd_id) {
 	case TA_TEEencrypt_CMD_ENC_VALUE:  // 암호화 명령어 처리
 		return enc_value(param_types, params);
-	// case TA_TEEencrypt_CMD_DEC_VALUE:
-	// 	return dec_value(param_types, params);
+    case TA_TEEencrypt_CMD_DEC_VALUE:  // 복호화 명령어 처리
+        return dec_value(param_types, params);
 	// case TA_TEEencrypt_CMD_RANDOMEKEY_GET:
 	// 	return dec_value(param_types, params);
 	// case TA_TEEencrypt_CMD_RANDOMEKEY_ENC:
