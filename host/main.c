@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
 		fclose(fp_key);  // 파일 닫기
 
 		/* 암호화 완료 메시지 */
-		printf("[암호화 완료] 암호문 파일: %s\n암호화된 키 파일: %s\n", ciphertext_filename, encryptedkey_filename);
+		printf("[암호화 완료]\n암호문 파일: %s\n암호화된 키 파일: %s\n", ciphertext_filename, encryptedkey_filename);
 
 		/* 할당된 메모리 해제 */
 		free(plaintext);
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
         fclose(fp_decrypted);  // 파일 닫기
 
         /* 복호화 완료 메시지 */
-        printf("[복호화 완료] 복호화된 평문 파일: %s\n", decrypted_filename);
+        printf("[복호화 완료]\n복호화된 평문 파일: %s\n", decrypted_filename);
 
         /* 할당된 메모리 해제 */
         free(ciphertext);

@@ -31,7 +31,7 @@
 #include <string.h>
 
 /* TA의 루트 키 설정 */
-#define ROOT_KEY 3
+#define ROOT_KEY 1
 
 /*
  * TA가 생성될 때 호출되는 함수

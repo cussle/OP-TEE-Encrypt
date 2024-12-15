@@ -37,9 +37,9 @@
 		{ 0x9e, 0x0e, 0xe5, 0x8d, 0x39, 0x60, 0x87, 0x3c} }
 
 /* The function IDs implemented in this TA */
-#define TA_TEEencrypt_CMD_ENC_VALUE				0
-#define TA_TEEencrypt_CMD_DEC_VALUE				1
-#define TA_TEEencrypt_CMD_RANDOMEKEY_GET		2
-#define TA_TEEencrypt_CMD_RANDOMEKEY_ENC		3
+#define TA_TEEencrypt_CMD_ENC_VALUE		0  // Caesar 암호화
+#define TA_TEEencrypt_CMD_DEC_VALUE		1  // Caesar 복호화
+#define TA_TEEencrypt_CMD_RSA_GENKEYS	2  // RSA 키 생성
+#define TA_TEEencrypt_CMD_RSA_ENCRYPT	3  // RSA 암호화
 
 #endif /*TA_TEEencrypt_H*/
