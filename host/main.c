@@ -122,25 +122,25 @@ int main(int argc, char *argv[]) {
 	memset(&op, 0, sizeof(op));
 
     /* 파라미터 타입 설정:
-       param0: 평문 (입력, memref)
-       param1: 암호문 (출력, memref)
+       param0: 평문 (입력, temp memref)
+       param1: 암호문 (출력, temp memref)
        param2: 암호화된 키 (출력, value)
        param3: 사용 안 함
     */
     op.paramTypes = TEEC_PARAM_TYPES(
-        TEEC_MEMREF_INPUT,
-        TEEC_MEMREF_OUTPUT,
+        TEEC_MEMREF_TEMP_INPUT,
+        TEEC_MEMREF_TEMP_OUTPUT,
         TEEC_VALUE_OUTPUT,
         TEEC_NONE
     );
 
-    /* param0: 평문 버퍼 및 크기 */
-    op.params[0].memref.buffer = plaintext;
-    op.params[0].memref.size = file_size;
+    /* param0: 평문 버퍼 및 크기 설정 */
+    op.params[0].tmpref.buffer = plaintext;
+    op.params[0].tmpref.size = file_size;
 
-    /* param1: 암호문을 저장할 버퍼 및 크기 */
-    op.params[1].memref.buffer = ciphertext;
-    op.params[1].memref.size = file_size;
+    /* param1: 암호문을 저장할 버퍼 및 크기 설정 */
+    op.params[1].tmpref.buffer = ciphertext;
+    op.params[1].tmpref.size = file_size;
 
     /* param2: 암호화된 키를 저장할 value */
     /* param3: 사용 안 함 */
