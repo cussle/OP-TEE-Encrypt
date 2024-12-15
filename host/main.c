@@ -134,6 +134,17 @@ int main(void)
         TEEC_NONE
     );
 
+    /* param0: 평문 버퍼 및 크기 */
+    op.params[0].memref.buffer = plaintext;
+    op.params[0].memref.size = file_size;
+
+    /* param1: 암호문을 저장할 버퍼 및 크기 */
+    op.params[1].memref.buffer = ciphertext;
+    op.params[1].memref.size = file_size;
+
+    /* param2: 암호화된 키를 저장할 value */
+    /* param3: 사용 안 함 */
+
     /* TA 명령어 호출 */
 	res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_ENC_VALUE, &op,
 				 &err_origin);
