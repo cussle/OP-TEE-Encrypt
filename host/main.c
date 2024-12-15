@@ -36,8 +36,7 @@
 /* To the the UUID (found the the TA's h-file(s)) */
 #include <TEEencrypt_ta.h>
 
-int main(void)
-{
+int main(int argc, char *argv[]) {
 	TEEC_Result res;						// OP-TEE 함수 호출 결과
 	TEEC_Context ctx;						// OP-TEE 컨텍스트
 	TEEC_Session sess;						// OP-TEE 세션
