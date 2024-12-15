@@ -87,6 +87,24 @@ int main(void)
         return 1;
     }
 
+    /* 파일에서 평문 읽기 */
+    size_t read_size = fread(plaintext, 1, file_size, fp);
+    if (read_size != file_size) {
+        perror("평문 파일 읽기 실패");
+        free(plaintext);
+        fclose(fp);
+        return 1;
+    }
+    fclose(fp);  // 파일 닫기
+
+    /* 암호문을 저장할 버퍼 할당 */
+    char *ciphertext = malloc(file_size);
+    if (!ciphertext) {
+        perror("암호문 버퍼 할당 실패");
+        free(plaintext);
+        return 1;
+    }
+
     /* OP-TEE 컨텍스트 초기화 */
 	res = TEEC_InitializeContext(NULL, &ctx);
     if (res != TEEC_SUCCESS) {
