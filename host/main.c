@@ -56,6 +56,37 @@ int main(void)
         return 1;
     }
 
+    char *input_filename = argv[2];						// 입력(평문 파일 이름)
+    char *ciphertext_filename = "ciphertext.txt";		// 출력(암호문 파일 이름)
+    char *encryptedkey_filename = "encrypted_key.txt";	// 출력(암호화된 키 파일 이름)
+
+    /* 평문 파일 열기 */
+    FILE *fp = fopen(input_filename, "rb");  // 바이너리 모드로 파일 열기
+    if (!fp) {
+        perror("평문 파일 열기 실패");
+        return 1;
+    }
+
+    /* 파일 크기 구하기 */
+    fseek(fp, 0, SEEK_END);			// 파일 포인터를 끝으로 이동
+    long file_size = ftell(fp);		// 파일 크기 측정
+    rewind(fp);						// 파일 포인터를 처음으로 되돌림
+
+    /* 파일 크기 유효성 검사 */
+    if (file_size <= 0) {
+        fprintf(stderr, "파일 크기가 유효하지 않습니다.\n");
+        fclose(fp);
+        return 1;
+    }
+
+    /* 평문 데이터를 읽을 버퍼 할당 */
+    char *plaintext = malloc(file_size);
+    if (!plaintext) {
+        perror("평문 버퍼 할당 실패");
+        fclose(fp);
+        return 1;
+    }
+
     /* OP-TEE 컨텍스트 초기화 */
 	res = TEEC_InitializeContext(NULL, &ctx);
     if (res != TEEC_SUCCESS) {
