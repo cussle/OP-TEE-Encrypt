@@ -117,9 +117,7 @@ static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
 
     /* 랜덤 키 생성 */
     uint32_t rand_bytes;
-    TEE_Result res = TEE_GenerateRandom(&rand_bytes, sizeof(rand_bytes));
-    if (res != TEE_SUCCESS)
-        return res;
+    TEE_GenerateRandom(&rand_bytes, sizeof(rand_bytes));
     uint32_t rand_key = (rand_bytes % 25) + 1;  // 1~25 범위로 조정
 
     /* 시저 암호로 평문을 암호화 */
