@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
 			/* 할당된 메모리 해제 */
 			free(plaintext);
 			free(ciphertext);
-		} if (strcmp(algorithm, "Caesar") == 0) {  // RSA 암호화 처리
+		} if (strcmp(algorithm, "RSA") == 0) {  // RSA 암호화 처리
 			char *ciphertext_filename = "ciphertext_rsa.bin";  // 출력(암호문 파일 이름)
 			char *encryptedkey_filename = "encrypted_key.txt";	// 출력(암호화된 키 파일 이름)
 
