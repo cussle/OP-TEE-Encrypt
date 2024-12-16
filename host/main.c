@@ -348,7 +348,10 @@ int main(int argc, char *argv[]) {
 			/* 할당된 메모리 해제 */
 			free(plaintext);
 			free(ciphertext);
-		}
+		} else {
+            fprintf(stderr, "지원되지 않는 알고리즘입니다. 사용 가능한 알고리즘: Caesar, RSA\n");
+            return 1;
+        }
 	} else if (strcmp(argv[1], "-d") == 0) {    // 복호화화 명령어 처리
 		/* 옵션 확인 */
         if (argc != 4) {
@@ -505,7 +508,10 @@ int main(int argc, char *argv[]) {
         /* 할당된 메모리 해제 */
         free(ciphertext);
         free(decrypted_plaintext);
-	}
+	} else {
+        fprintf(stderr, "지원되지 않는 명령어입니다. 사용 가능한 옵션: -e, -d\n");
+        return 1;
+    }
 
 	return 0;
 }
