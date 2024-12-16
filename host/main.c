@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
 			fclose(fp);  // 파일 닫기
 
 			/* 암호문을 저장할 버퍼 할당 */
-			char *ciphertext = malloc(file_size);
+			char *ciphertext = malloc(RSA_CIPHER_LEN_1024);
 			if (!ciphertext) {
 				perror("암호문 버퍼 할당 실패");
 				free(plaintext);

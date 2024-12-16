@@ -33,6 +33,17 @@
 /* TA의 루트 키 설정 */
 #define ROOT_KEY 1
 
+/* RSA 설정 */
+#define RSA_KEY_SIZE 1024
+#define RSA_MAX_PLAIN_LEN_1024 86 // (1024/8) - 42 (padding)
+#define RSA_CIPHER_LEN_1024 (RSA_KEY_SIZE / 8)
+
+/* RSA 세션 구조체 */
+struct rsa_session {
+    TEE_OperationHandle op_handle;    /* RSA operation */
+    TEE_ObjectHandle key_handle;      /* Key handle */
+};
+
 /*
  * TA가 생성될 때 호출되는 함수
  */
@@ -88,6 +99,7 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx) {
  * - param0: 평문 (입력, memref)
  * - param1: 암호문 (출력, memref)
  * - param2: 암호화된 키 (출력, value)
+ * - param3: 사용 안 함
  */
 static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
     /* 파라미터 타입 정의 */
@@ -151,7 +163,141 @@ static TEE_Result enc_value(uint32_t param_types, TEE_Param params[4]) {
 }
 
 /*
- * 시저 암호를 사용하여 암호문을 복호화하는 함수.
+ * RSA 키 쌍 생성 함수
+ */
+TEE_Result rsa_genkeys(uint32_t param_types, TEE_Param params[4]) {
+    /* 예상되는 파라미터 타입 정의 */
+    uint32_t exp_param_types = TEE_PARAM_TYPES(
+        TEE_PARAM_TYPE_NONE,
+        TEE_PARAM_TYPE_NONE,
+        TEE_PARAM_TYPE_NONE,
+        TEE_PARAM_TYPE_NONE
+    );
+
+	DMSG("has been called");
+
+    /* 파라미터 타입 검증 */
+    if (param_types != exp_param_types)
+        return TEE_ERROR_BAD_PARAMETERS;
+
+    /* RSA 키 생성 처리 */
+    struct rsa_session sess;
+    TEE_Result res;
+
+    /* RSA 키 쌍 할당 */
+    res = TEE_AllocateTransientObject(TEE_TYPE_RSA_KEYPAIR, RSA_KEY_SIZE, &sess.key_handle);
+    if (res != TEE_SUCCESS) {
+        EMSG("RSA 키 쌍 할당 실패: 0x%x", res);
+        return res;
+    }
+	DMSG("\n>>>>> Transient object allocated.n");
+
+    /* RSA 키 생성 */
+    res = TEE_GenerateKey(sess.key_handle, RSA_KEY_SIZE, NULL, 0);
+    if (res != TEE_SUCCESS) {
+        EMSG("RSA 키 생성 실패: 0x%x", res);
+        TEE_FreeObject(sess.key_handle);
+        return res;
+    }
+
+	DMSG("\n>>>>> Keys generated.n");
+
+    /* RSA 자원 해제 */
+    TEE_FreeObject(sess.key_handle);
+
+    return TEE_SUCCESS;
+}
+
+/*
+ * RSA를 사용하여 평문을 암호화하는 함수
+ * - param0: 평문 (입력, memref)
+ * - param1: 암호문 (출력, memref)
+ * - param2: 사용 안 함
+ * - param3: 사용 안 함
+ */
+static TEE_Result rsa_enc_value(uint32_t param_types, TEE_Param params[4]) {
+    /* 파라미터 타입 정의 */
+    uint32_t exp_param_types = TEE_PARAM_TYPES(
+        TEE_PARAM_TYPE_MEMREF_INPUT,
+        TEE_PARAM_TYPE_MEMREF_OUTPUT,
+        TEE_PARAM_TYPE_NONE,
+        TEE_PARAM_TYPE_NONE
+    );
+    
+	DMSG("has been called");
+
+    /* 파라미터 타입 검증 */
+    if (param_types != exp_param_types)
+        return TEE_ERROR_BAD_PARAMETERS;
+
+    /* 입력 평문과 출력 암호문 버퍼 */
+    char *plaintext = (char *)params[0].memref.buffer;
+    size_t plaintext_size = params[0].memref.size;
+
+    char *ciphertext = (char *)params[1].memref.buffer;
+    size_t ciphertext_size = params[1].memref.size;
+
+    /* RSA 설정 */
+    uint32_t rsa_alg = TEE_ALG_RSAES_PKCS1_V1_5;
+
+    /* RSA 키 쌍 할당 */
+    struct rsa_session sess;
+    TEE_Result res;
+
+	DMSG("\n>>>>> Preparing RSA encryption operation\n");
+    res = TEE_AllocateTransientObject(TEE_TYPE_RSA_KEYPAIR, RSA_KEY_SIZE, &sess.key_handle);
+    if (res != TEE_SUCCESS) {
+        EMSG("RSA 키 쌍 할당 실패: 0x%x", res);
+        return res;
+    }
+
+    /* RSA 키 생성 */
+    res = TEE_GenerateKey(sess.key_handle, RSA_KEY_SIZE, NULL, 0);
+    if (res != TEE_SUCCESS) {
+        EMSG("RSA 키 생성 실패: 0x%x", res);
+        TEE_FreeObject(sess.key_handle);
+        return res;
+    }
+
+    /* RSA 암호화 작업 준비 */
+    res = TEE_AllocateOperation(&sess.op_handle, rsa_alg, TEE_MODE_ENCRYPT, RSA_KEY_SIZE);
+    if (res != TEE_SUCCESS) {
+        EMSG("RSA 암호화 작업 준비 실패: 0x%x", res);
+        TEE_FreeObject(sess.key_handle);
+        return res;
+    }
+
+    /* RSA 키 설정 */
+    res = TEE_SetOperationKey(sess.op_handle, sess.key_handle);
+    if (res != TEE_SUCCESS) {
+        EMSG("RSA 키 설정 실패: 0x%x", res);
+        TEE_FreeOperation(sess.op_handle);
+        TEE_FreeObject(sess.key_handle);
+        return res;
+    }
+
+    /* RSA 암호화 */
+    size_t actual_cipher_len = ciphertext_size;
+    res = TEE_AsymmetricEncrypt(sess.op_handle, NULL, 0,
+                                plaintext, plaintext_size, ciphertext, &actual_cipher_len);
+    if (res != TEE_SUCCESS) {
+        EMSG("RSA 암호화 실패: 0x%x", res);
+        TEE_FreeOperation(sess.op_handle);
+        TEE_FreeObject(sess.key_handle);
+        return res;
+    }
+
+    IMSG("RSA 암호화 완료: 암호문 길이 = %zu bytes", actual_cipher_len);
+
+    /* RSA 자원 해제 */
+    TEE_FreeOperation(sess.op_handle);
+    TEE_FreeObject(sess.key_handle);
+
+    return TEE_SUCCESS;
+}
+
+/*
+ * 시저 암호를 사용하여 암호문을 복호화하는 함수
  * - param0: 암호문 (입력, memref)
  * - param1: 암호화된 키 (입력, value)
  * - param2: 복호화된 평문 (출력, memref)
@@ -226,10 +372,10 @@ TEE_Result TA_InvokeCommandEntryPoint(
 		return enc_value(param_types, params);
     case TA_TEEencrypt_CMD_DEC_VALUE:  // 복호화 명령어 처리
         return dec_value(param_types, params);
-	// case TA_TEEencrypt_CMD_RANDOMEKEY_GET:
-	// 	return dec_value(param_types, params);
-	// case TA_TEEencrypt_CMD_RANDOMEKEY_ENC:
-	// 	return dec_value(param_types, params);
+	case TA_TEEencrypt_CMD_RSA_GENKEYS:  // RSA 키 생성 명령어 처리
+		return dec_value(param_types, params);
+	case TA_TEEencrypt_CMD_RSA_ENCRYPT:  // RSA 암호화 명령어 처리
+		return dec_value(param_types, params);
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
