@@ -215,6 +215,8 @@ int main(int argc, char *argv[]) {
 			/* 할당된 메모리 해제 */
 			free(plaintext);
 			free(ciphertext);
+
+			return 0;
 		} if (strcmp(algorithm, "RSA") == 0) {  // RSA 암호화 처리
 			char *ciphertext_filename = "ciphertext_rsa.bin";  // 출력(암호문 파일 이름)
 			char *encryptedkey_filename = "encrypted_key.txt";	// 출력(암호화된 키 파일 이름)
@@ -348,6 +350,9 @@ int main(int argc, char *argv[]) {
 			/* 할당된 메모리 해제 */
 			free(plaintext);
 			free(ciphertext);
+			
+
+			return 0;
 		} else {
             fprintf(stderr, "지원되지 않는 알고리즘입니다. 사용 가능한 알고리즘: Caesar, RSA\n");
             return 1;
@@ -508,10 +513,10 @@ int main(int argc, char *argv[]) {
         /* 할당된 메모리 해제 */
         free(ciphertext);
         free(decrypted_plaintext);
+
+		return 0;
 	} else {
         fprintf(stderr, "지원되지 않는 명령어입니다. 사용 가능한 옵션: -e, -d\n");
         return 1;
     }
-
-	return 0;
 }
