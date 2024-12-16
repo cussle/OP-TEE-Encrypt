@@ -215,6 +215,139 @@ int main(int argc, char *argv[]) {
 			/* 할당된 메모리 해제 */
 			free(plaintext);
 			free(ciphertext);
+		} if (strcmp(algorithm, "Caesar") == 0) {  // RSA 암호화 처리
+			char *ciphertext_filename = "ciphertext_rsa.bin";  // 출력(암호문 파일 이름)
+			char *encryptedkey_filename = "encrypted_key.txt";	// 출력(암호화된 키 파일 이름)
+
+			/* 평문 파일 열기 */
+			FILE *fp = fopen(input_filename, "rb");  // 바이너리 모드로 파일 열기
+			if (!fp) {
+				perror("평문 파일 열기 실패");
+				return 1;
+			}
+
+			/* 파일 크기 구하기 */
+			fseek(fp, 0, SEEK_END);			// 파일 포인터를 끝으로 이동
+			long file_size = ftell(fp);		// 파일 크기 측정
+			rewind(fp);						// 파일 포인터를 처음으로 되돌림
+
+			/* 파일 크기 유효성 검사 */
+			if (file_size <= 0) {
+				fprintf(stderr, "평문 파일 크기가 유효하지 않습니다.\n");
+				fclose(fp);
+				return 1;
+			}
+
+			/* 평문 데이터를 읽을 버퍼 할당 */
+			char *plaintext = malloc(file_size);
+			if (!plaintext) {
+				perror("평문 버퍼 할당 실패");
+				fclose(fp);
+				return 1;
+			}
+
+			/* 파일에서 평문 읽기 */
+			size_t read_size = fread(plaintext, 1, file_size, fp);
+			if (read_size != file_size) {
+				perror("평문 파일 읽기 실패");
+				free(plaintext);
+				fclose(fp);
+				return 1;
+			}
+			fclose(fp);  // 파일 닫기
+
+			/* 암호문을 저장할 버퍼 할당 */
+			char *ciphertext = malloc(file_size);
+			if (!ciphertext) {
+				perror("암호문 버퍼 할당 실패");
+				free(plaintext);
+				return 1;
+			}
+
+			/* OP-TEE 컨텍스트 초기화 */
+			res = TEEC_InitializeContext(NULL, &ctx);
+			if (res != TEEC_SUCCESS) {
+				errx(1, "TEEC_InitializeContext 실패: 0x%x", res);
+			}
+
+			/* TA와 세션 열기 */
+			res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+			if (res != TEEC_SUCCESS) {
+				TEEC_FinalizeContext(&ctx);
+				errx(1, "TEEC_OpenSession 실패: 0x%x, 원인: 0x%x", res, err_origin);
+			}
+
+			/* TEEC_Operation 구조체 초기화 */
+			memset(&op, 0, sizeof(op));
+
+			/* 파라미터 타입 설정:
+			param0: 평문 (입력, temp memref)
+			param1: 암호문 (출력, temp memref)
+			param2: 사용 안 함
+			param3: 사용 안 함
+			*/
+			op.paramTypes = TEEC_PARAM_TYPES(
+				TEEC_MEMREF_TEMP_INPUT,
+				TEEC_MEMREF_TEMP_OUTPUT,
+				TEEC_NONE,
+				TEEC_NONE
+			);
+
+			/* param0: 평문 버퍼 및 크기 설정 */
+			op.params[0].tmpref.buffer = plaintext;
+			op.params[0].tmpref.size = file_size;
+
+			/* param1: 암호문을 저장할 버퍼 및 크기 설정 */
+			op.params[1].tmpref.buffer = ciphertext;
+			op.params[1].tmpref.size = file_size;
+
+			/* param2, param3: 사용 안 함 */
+
+			/* TA 명령어 호출 (RSA 키 생성) */
+			printf("========================Encryption (RSA)========================\n");
+			res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RSA_GENKEYS, &op, &err_origin);  // 암호화 명령어 호출
+			if (res != TEEC_SUCCESS) {
+				TEEC_CloseSession(&sess);
+				TEEC_FinalizeContext(&ctx);
+				errx(1, "TEEC_InvokeCommand 실패(RSA_GENKEYS): 0x%x, 원인: 0x%x", res, err_origin);
+			}
+
+			/* TA 명령어 호출 (RSA 암호화) */
+			res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_CMD_RSA_ENCRYPT, &op, &err_origin);  // 암호화 명령어 호출
+			if (res != TEEC_SUCCESS) {
+				TEEC_CloseSession(&sess);
+				TEEC_FinalizeContext(&ctx);
+				errx(1, "TEEC_InvokeCommand 실패(RSA_ENCRYPT): 0x%x, 원인: 0x%x", res, err_origin);
+			}
+
+			/* 세션 및 컨텍스트 종료 */
+			TEEC_CloseSession(&sess);
+			TEEC_FinalizeContext(&ctx);
+
+			/* 암호문을 파일에 저장 */
+			fp = fopen(ciphertext_filename, "wb");  // 쓰기 바이너리 모드로 파일 열기
+			if (!fp) {
+				perror("암호문 파일 생성 실패");
+				free(plaintext);
+				free(ciphertext);
+				return 1;
+			}
+			size_t write_size = fwrite(ciphertext, 1, file_size, fp);
+			if (write_size != file_size) {
+				perror("암호문 파일 쓰기 실패");
+				fclose(fp);
+				free(plaintext);
+				free(ciphertext);
+				return 1;
+			}
+			fclose(fp);  // 파일 닫기
+
+			/* 암호화 완료 메시지 */
+			printf("[RSA 암호화 완료]\n암호문 파일: %s\n암호화된 키 파일: %s\n", ciphertext_filename, encryptedkey_filename);
+
+			/* 할당된 메모리 해제 */
+			free(plaintext);
+			free(ciphertext);
 		}
 	} else if (strcmp(argv[1], "-d") == 0) {    // 복호화화 명령어 처리
 		/* 옵션 확인 */
