@@ -25,10 +25,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <err.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <err.h>		// 오류 처리 함수 사용을 위한 헤더 파일
+#include <stdio.h>		// 표준 입출력 함수 사용을 위한 헤더 파일
+#include <stdlib.h>		// 표준 라이브러리 사용을 위한 위한 헤더 파일
+#include <string.h>		// 문자열 관련 사용을 위한 위한 헤더 파일
 
 /* OP-TEE TEE client API (built by optee_client) */
 #include <tee_client_api.h>
@@ -37,9 +37,9 @@
 #include <TEEencrypt_ta.h>
 
 /* RSA 설정 */
-#define RSA_KEY_SIZE 1024
-#define RSA_MAX_PLAIN_LEN_1024 86 // (1024/8) - 42 (padding)
-#define RSA_CIPHER_LEN_1024 (RSA_KEY_SIZE / 8)
+#define RSA_KEY_SIZE 1024						// RSA 키의 크기를 1024비트로 설정
+#define RSA_MAX_PLAIN_LEN_1024 86				// RSA 1024비트 키를 사용할 때 암호화할 수 있는 최대 평문의 길이를 86자로 제한
+#define RSA_CIPHER_LEN_1024 (RSA_KEY_SIZE / 8)	// RSA 암호문의 길이(키 크기를 8로 나눈 값)
 
 int main(int argc, char *argv[]) {
 	TEEC_Result res;						// OP-TEE 함수 호출 결과
@@ -57,9 +57,9 @@ int main(int argc, char *argv[]) {
 
     if (strcmp(argv[1], "-e") == 0) {  // 암호화 명령어 처리
 		/* 옵션 확인 */
-        if (argc != 4) {
+        if (argc != 4) {  // 프로그램을 실행할 때 최소한 3개의 인자가 필요
             fprintf(stderr, "암호화 사용법: %s -e [평문 파일] [Caesar|RSA]\n", argv[0]);
-            return 1;
+            return 1;  // 인자가 부족하면 프로그램을 종료하고 오류 코드 반환
         }
 
 		char *input_filename = argv[2];						// 입력(평문 파일 이름)
